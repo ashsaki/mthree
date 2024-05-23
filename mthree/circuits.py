@@ -12,18 +12,22 @@
 
 """mthree circuit building routines"""
 import numpy as np
-from qiskit import QuantumCircuit
+from qiskit import QuantumCircuit, ClassicalRegister
 
 
 def _tensor_meas_states(qubit, num_qubits, initial_reset=False):
     """Construct |0> and |1> states
     for independent 1Q cals.
     """
-    qc0 = QuantumCircuit(num_qubits, 1)
+    creg = ClassicalRegister(size=1, name="m3")
+
+    qc0 = QuantumCircuit(num_qubits)
+    qc0.add_register(creg)
     if initial_reset:
         qc0.reset(qubit)
     qc0.measure(qubit, 0)
-    qc1 = QuantumCircuit(num_qubits, 1)
+    qc1 = QuantumCircuit(num_qubits)
+    qc1.add_register(creg)
     if initial_reset:
         qc1.reset(qubit)
     qc1.x(qubit)
@@ -36,11 +40,14 @@ def _marg_meas_states(qubits, num_system_qubits, initial_reset=False):
     for marginal 1Q cals.
     """
     num_qubits = len(qubits)
-    qc0 = QuantumCircuit(num_system_qubits, num_qubits)
+    creg = ClassicalRegister(size=num_qubits, name="m3")
+    qc0 = QuantumCircuit(num_system_qubits)
+    qc0.add_register(creg)
     if initial_reset:
         qc0.reset(qubits)
     qc0.measure(qubits, range(num_qubits))
     qc1 = QuantumCircuit(num_system_qubits, num_qubits)
+    qc1.add_register(creg)
     if initial_reset:
         qc1.reset(qubits)
     qc1.x(qubits)
@@ -84,8 +91,10 @@ def balanced_cal_circuits(cal_strings, layout, system_qubits, initial_reset=Fals
     """
     circs = []
     num_active_qubits = len(cal_strings[0])
+    creg = ClassicalRegister(size=num_active_qubits, name="m3")
     for string in cal_strings:
-        qc = QuantumCircuit(system_qubits, num_active_qubits)
+        qc = QuantumCircuit(system_qubits)
+        qc.add_register(creg)
         if initial_reset:
             qc.barrier()
             qc.reset(range(system_qubits))

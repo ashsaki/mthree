@@ -25,6 +25,7 @@ import scipy.linalg as la
 import scipy.sparse.linalg as spla
 import orjson
 from qiskit.providers import BackendV2, BackendV1
+from qiskit_ibm_runtime import SamplerV2
 
 from mthree.circuits import (
     _tensor_meas_states,
@@ -46,23 +47,23 @@ logger = logging.getLogger(__name__)
 class M3Mitigation:
     """Main M3 calibration class."""
 
-    def __init__(self, system=None, iter_threshold=4096):
+    def __init__(self, system: SamplerV2 = None, iter_threshold: int = 4096):
         """Main M3 calibration class.
 
         Parameters:
-            system (Backend): Target backend.
+            system (SamplerV2): Target backend.
             iter_threshold (int): Sets the bitstring count at which iterative mode
                                   is turned on (assuming reasonable error rates).
 
         Attributes:
-            system (Backend): The target system.
+            system (SamplerV2): The target system.
             system_info (dict): Information needed about the system
             cal_method (str): Calibration method used
             cal_timestamp (str): Time at which cals were taken
             single_qubit_cals (list): 1Q calibration matrices
         """
         self.system = system
-        self.system_info = system_info(system) if system else {}
+        self.system_info = system_info(system._backend) if system else {}
         self.single_qubit_cals = None
         self.num_qubits = self.system_info["num_qubits"] if system else None
         self.iter_threshold = iter_threshold
@@ -402,12 +403,8 @@ class M3Mitigation:
 
         num_circs = len(trans_qcs)
         # check for max number of circuits per job
-        if isinstance(self.system, BackendV1):
-            # Aer simulator has no 'max_experiments'
-            max_circuits = getattr(self.system.configuration(), "max_experiments", 300)
-        elif isinstance(self.system, BackendV2):
-            max_circuits = self.system.max_circuits
-            # Needed for https://github.com/Qiskit/qiskit-terra/issues/9947
+        if isinstance(self.system, SamplerV2):
+            max_circuits = self.system._backend.max_circuits
             if max_circuits is None:
                 max_circuits = 300
         else:
@@ -425,7 +422,8 @@ class M3Mitigation:
         # Do job submission here
         jobs = []
         for circs in circs_list:
-            _job = self.system.run(circs, shots=shots, rep_delay=self.rep_delay)
+            self.system.options.default_shots = shots
+            _job = self.system.run(circs)
             jobs.append(_job)
 
         # Execute job and cal building in new thread.
@@ -859,27 +857,25 @@ def _job_thread(jobs, mit, qubits, num_cal_qubits, cal_strings):
     counts = []
     for job in jobs:
         try:
-            res = job.result()
+            primitive_result = job.result()
         # pylint: disable=broad-except
         except Exception as error:
             mit._job_error = error
             return
         else:
-            _counts = res.get_counts()
+            _counts = [
+                pub_result.data.m3.get_counts()
+                for pub_result in primitive_result
+            ]
             # _counts can be a list or a dict (if only one circuit was executed within the job)
             if isinstance(_counts, list):
                 counts.extend(_counts)
             else:
                 counts.append(_counts)
     logger.info("All jobs are done.")
-    # attach timestamp
-    timestamp = res.date
-    # Timestamp can be None
-    if timestamp is None:
-        timestamp = datetime.datetime.now()
-    # Needed since Aer result date is str but IBMQ job is datetime
-    if isinstance(timestamp, datetime.datetime):
-        timestamp = timestamp.isoformat()
+    
+    timestamp = datetime.datetime.now().isoformat()
+
     # Go to UTC times because we are going to use this for
     # resultsDB storage as well
     dt = datetime.datetime.fromisoformat(timestamp)
