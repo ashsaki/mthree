@@ -77,7 +77,6 @@ def test_mapping_list():
     qc.x(4)
     qc.h(range(5))
     qc.cx(range(4), 4)
-    qc.draw()
     qc.h(range(4))
     qc.barrier()
     qc.measure(range(4), range(4))

@@ -13,6 +13,7 @@
 """Test inoperable qubits"""
 import pytest
 from qiskit_ibm_runtime.fake_provider import FakeKolkata
+from qiskit_ibm_runtime import SamplerV2 as Sampler
 import mthree
 
 
@@ -23,11 +24,12 @@ def _faulty():
 BACKEND = FakeKolkata()
 _ = BACKEND.properties()
 BACKEND._properties.faulty_qubits = _faulty
+SAMPLER = Sampler(backend=BACKEND)
 
 
 def test_inoperable_qubits1():
     """Test that inoperable qubits are ignored"""
-    mit = mthree.M3Mitigation(BACKEND)
+    mit = mthree.M3Mitigation(SAMPLER)
     mit.cals_from_system()
     for qubit in _faulty():
         assert mit.single_qubit_cals[qubit] is None
@@ -35,6 +37,6 @@ def test_inoperable_qubits1():
 
 def test_inoperable_qubits2():
     """Test that explicitly using inoperable qubits raises error"""
-    mit = mthree.M3Mitigation(BACKEND)
+    mit = mthree.M3Mitigation(SAMPLER)
     with pytest.raises(mthree.exceptions.M3Error):
         mit.cals_from_system([0, 3])

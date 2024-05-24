@@ -16,6 +16,7 @@
 import numpy as np
 from qiskit import QuantumCircuit
 from qiskit_ibm_runtime.fake_provider import FakeAthens
+from qiskit_ibm_runtime import SamplerV2 as Sampler
 import mthree
 
 
@@ -30,9 +31,10 @@ def test_methods_equality():
     qc.measure_all()
 
     backend = FakeAthens()
-    raw_counts = backend.run(qc, shots=2048).result().get_counts()
+    sampler = Sampler(backend=backend)
+    raw_counts = sampler.run([qc], shots=2048).result()[0].data.meas.get_counts()
 
-    mit = mthree.M3Mitigation(backend)
+    mit = mthree.M3Mitigation(sampler)
     mit.cals_from_system()
 
     iter_q = mit.apply_correction(raw_counts, range(5), method='iterative')
@@ -54,9 +56,10 @@ def test_set_iterative():
     qc.measure_all()
 
     backend = FakeAthens()
-    raw_counts = backend.run(qc, shots=4096).result().get_counts()
+    sampler = Sampler(backend=backend)
+    raw_counts = sampler.run([qc], shots=4096).result()[0].data.meas.get_counts()
 
-    mit = mthree.M3Mitigation(backend)
+    mit = mthree.M3Mitigation(sampler)
     mit.cals_from_system(shots=4096)
 
     _, details = mit.apply_correction(raw_counts, range(5),

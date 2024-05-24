@@ -14,6 +14,7 @@
 import pytest
 from qiskit import QuantumCircuit, transpile
 from qiskit_ibm_runtime.fake_provider import FakeCasablanca
+from qiskit_ibm_runtime import SamplerV2 as Sampler
 import mthree
 from mthree.exceptions import M3Error
 from mthree.utils import final_measurement_mapping
@@ -32,9 +33,10 @@ def test_test_call_cals_twice():
     qc.measure(range(4), range(4))
 
     backend = FakeCasablanca()
+    sampler = Sampler(backend=backend)
     circs = transpile([qc]*5, backend)
     maps = final_measurement_mapping(circs)
-    mit = mthree.M3Mitigation(backend)
+    mit = mthree.M3Mitigation(sampler)
     with pytest.raises(M3Error):
         mit.cals_from_system(maps, async_cal=True)
         mit.cals_from_system(maps, async_cal=True)

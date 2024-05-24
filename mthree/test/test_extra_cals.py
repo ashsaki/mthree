@@ -17,6 +17,7 @@ import numpy as np
 import orjson
 from qiskit import QuantumCircuit
 from qiskit_ibm_runtime.fake_provider import FakeAthens
+from qiskit_ibm_runtime import SamplerV2 as Sampler
 
 import mthree
 
@@ -33,9 +34,10 @@ def test_missing_qubit_cal():
     qc.measure_all()
 
     backend = FakeAthens()
-    raw_counts = backend.run(qc, shots=2048).result().get_counts()
+    sampler = Sampler(backend=backend)
+    raw_counts = sampler.run([qc], shots=2048).result()[0].data.meas.get_counts()
 
-    mit = mthree.M3Mitigation(backend)
+    mit = mthree.M3Mitigation(sampler)
     mit.cals_from_system(range(4))
 
     assert mit.single_qubit_cals[4] is None
@@ -57,9 +59,10 @@ def test_missing_all_cals():
     qc.measure_all()
 
     backend = FakeAthens()
-    raw_counts = backend.run(qc, shots=2048).result().get_counts()
+    sampler = Sampler(backend=backend)
+    raw_counts = sampler.run([qc], shots=2048).result()[0].data.meas.get_counts()
 
-    mit = mthree.M3Mitigation(backend)
+    mit = mthree.M3Mitigation(sampler)
     _ = mit.apply_correction(raw_counts, range(5))
 
     assert not any(mit.single_qubit_cals[kk] is None for kk in range(5))
@@ -68,8 +71,9 @@ def test_missing_all_cals():
 def test_save_cals(tmp_path):
     """Test if passing a calibration file saves the correct JSON."""
     backend = FakeAthens()
+    sampler = Sampler(backend=backend)
     cal_file = tmp_path / "cal.json"
-    mit = mthree.M3Mitigation(backend)
+    mit = mthree.M3Mitigation(sampler)
     mit.cals_from_system(cals_file=cal_file)
     with open(cal_file, 'r', encoding='utf-8') as fd:
         cals = np.array(orjson.loads(fd.read())['cals'])
@@ -80,8 +84,9 @@ def test_load_cals(tmp_path):
     """Test if loading a calibration JSON file correctly loads the cals."""
     cal_file = tmp_path / "cal.json"
     backend = FakeAthens()
-    mit = mthree.M3Mitigation(backend)
+    sampler = Sampler(backend=backend)
+    mit = mthree.M3Mitigation(sampler)
     mit.cals_from_system(cals_file=cal_file)
-    new_mit = mthree.M3Mitigation(backend)
+    new_mit = mthree.M3Mitigation(sampler)
     new_mit.cals_from_file(cal_file)
     assert np.array_equal(mit.single_qubit_cals, new_mit.single_qubit_cals)

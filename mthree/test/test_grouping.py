@@ -15,6 +15,7 @@
 import numpy as np
 from qiskit import QuantumCircuit, transpile
 from qiskit_ibm_runtime.fake_provider import FakeAthens
+from qiskit_ibm_runtime import SamplerV2 as Sampler
 import mthree
 
 
@@ -22,6 +23,8 @@ def test_groupings1():
     """Test grouping of operators output
     """
     backend = FakeAthens()
+    sampler = Sampler(backend=backend)
+
     qc = QuantumCircuit(4)
     qc.h(0)
     qc.cx(0, range(1, 4))
@@ -31,10 +34,10 @@ def test_groupings1():
                             approximation_degree=0)
     mappings = mthree.utils.final_measurement_mapping(trans_circs)
 
-    job = backend.run(trans_circs, shots=10000)
-    counts = job.result().get_counts()
+    job = sampler.run(trans_circs, shots=10000)
+    counts = [pub_result.data.meas.get_counts() for pub_result in job.result()]
 
-    mit = mthree.M3Mitigation(backend)
+    mit = mthree.M3Mitigation(sampler)
     mit.cals_from_system(mappings, shots=10000)
 
     quasis = mit.apply_correction(counts, mappings, return_mitigation_overhead=True)
@@ -53,6 +56,8 @@ def test_groupings2():
     """Check ordering of grouped outputs
     """
     backend = FakeAthens()
+    sampler = Sampler(backend=backend)
+
     qc = QuantumCircuit(4)
     qc.h(0)
     qc.cx(0, range(1, 4))
@@ -62,10 +67,10 @@ def test_groupings2():
                             approximation_degree=0)
     mappings = mthree.utils.final_measurement_mapping(trans_circs)
 
-    job = backend.run(trans_circs, shots=10000)
-    counts = job.result().get_counts()
+    job = sampler.run(trans_circs, shots=10000)
+    counts = [pub_result.data.meas.get_counts() for pub_result in job.result()]
 
-    mit = mthree.M3Mitigation(backend)
+    mit = mthree.M3Mitigation(sampler)
     mit.cals_from_system(mappings, shots=10000)
 
     quasis = mit.apply_correction(counts, mappings, return_mitigation_overhead=True)

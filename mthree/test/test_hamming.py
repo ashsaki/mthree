@@ -14,6 +14,7 @@
 import numpy as np
 
 from qiskit_ibm_runtime.fake_provider import FakeKolkata
+from qiskit_ibm_runtime import SamplerV2 as Sampler
 import mthree
 
 
@@ -26,7 +27,8 @@ def test_hamming_equiv():
     # and break when we hit that number.  Thus, this test validates
     # that break via the computed column norms
     backend = FakeKolkata()
-    mit = mthree.M3Mitigation(backend)
+    sampler = Sampler(backend=backend)
+    mit = mthree.M3Mitigation(sampler)
     mit.cals_from_system()
     for kk in range(8+1):
         _, details = mit.apply_correction(COUNTS, list(range(8)),

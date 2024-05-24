@@ -13,6 +13,7 @@
 
 """Test matrix elements"""
 from qiskit_ibm_runtime.fake_provider import FakeAthens
+from qiskit_ibm_runtime import SamplerV2 as Sampler
 import mthree
 
 LOW_SHOTS = 543
@@ -23,7 +24,8 @@ def test_athens_mod_shots1():
     """Check that default shots works properly for low settings"""
     backend = FakeAthens()
     backend._configuration.max_shots = LOW_SHOTS
-    mit = mthree.M3Mitigation(backend)
+    sampler = Sampler(backend=backend)
+    mit = mthree.M3Mitigation(sampler)
     mit.cals_from_system()
 
     assert mit.cal_shots == LOW_SHOTS
@@ -33,7 +35,8 @@ def test_athens_mod_shots2():
     """Check that default shots works properly for high settings"""
     backend = FakeAthens()
     backend._configuration.max_shots = HIGH_SHOTS
-    mit = mthree.M3Mitigation(backend)
+    sampler = Sampler(backend=backend)
+    mit = mthree.M3Mitigation(sampler)
     mit.cals_from_system()
 
     assert mit.cal_shots == 10000

@@ -13,12 +13,14 @@
 """Test matrix elements"""
 from qiskit import QuantumCircuit, transpile
 from qiskit_ibm_runtime.fake_provider import FakeMontreal
+from qiskit_ibm_runtime import SamplerV2 as Sampler
 import mthree
 
 
 def test_quasi_attr_set():
     """Test quasi-probs attributes are set"""
     backend = FakeMontreal()
+    sampler = Sampler(backend=backend)
 
     N = 6
     qc = QuantumCircuit(N)
@@ -32,12 +34,14 @@ def test_quasi_attr_set():
 
     qubits = [1, 4, 7, 10, 12, 13]
 
-    mit = mthree.M3Mitigation(backend)
+    mit = mthree.M3Mitigation(sampler)
     mit.cals_from_system(qubits)
 
     raw_counts = (
-        backend.run(transpile(qc, backend, initial_layout=qubits), shots=1024)
-        .result()
+        sampler.run([transpile(qc, backend, initial_layout=qubits)], shots=1024)
+        .result()[0]
+        .data
+        .meas
         .get_counts()
     )
     quasi1 = mit.apply_correction(

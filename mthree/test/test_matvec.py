@@ -15,6 +15,7 @@ import numpy as np
 import scipy.sparse.linalg as spla
 from qiskit import QuantumCircuit
 from qiskit_ibm_runtime.fake_provider import FakeAthens
+from qiskit_ibm_runtime import SamplerV2 as Sampler
 import mthree
 from mthree.matvec import M3MatVec
 
@@ -22,6 +23,7 @@ from mthree.matvec import M3MatVec
 def test_matvec():
     """Check that matvec and rmatvec values are returned as expected"""
     backend = FakeAthens()
+    sampler = Sampler(backend=backend)
 
     qc = QuantumCircuit(5)
     qc.h(2)
@@ -31,8 +33,8 @@ def test_matvec():
     qc.cx(3, 4)
     qc.measure_all()
 
-    raw_counts = backend.run(qc).result().get_counts()
-    mit = mthree.M3Mitigation(backend)
+    raw_counts = sampler.run([qc]).result()[0].data.meas.get_counts()
+    mit = mthree.M3Mitigation(sampler)
     mit.cals_from_system(range(5))
 
     cals = mit._form_cals(range(5))

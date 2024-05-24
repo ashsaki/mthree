@@ -12,6 +12,7 @@
 
 """Test multiple job submission"""
 from qiskit_ibm_runtime.fake_provider import FakeKolkata
+from qiskit_ibm_runtime import SamplerV2 as Sampler
 import mthree
 
 
@@ -20,7 +21,8 @@ def test_multiple_job_submission():
     backend = FakeKolkata()
     _ = backend.configuration()
     backend._configuration.max_experiments = 5
-    mit = mthree.M3Mitigation(backend)
+    sampler = Sampler(backend=backend)
+    mit = mthree.M3Mitigation(sampler)
     mit.cals_from_system()
     assert all(cal.trace() > 1.8 for cal in mit.single_qubit_cals)
 
@@ -30,6 +32,7 @@ def test_multiple_job_submission_single_circuit():
     backend = FakeKolkata()
     _ = backend.configuration()
     backend._configuration.max_experiments = 1
-    mit = mthree.M3Mitigation(backend)
+    sampler = Sampler(backend=backend)
+    mit = mthree.M3Mitigation(sampler)
     mit.cals_from_system()
     assert all(cal.trace() > 1.8 for cal in mit.single_qubit_cals)

@@ -14,12 +14,14 @@
 """Test list inputs"""
 from qiskit import QuantumCircuit
 from qiskit_ibm_runtime.fake_provider import FakeAthens
+from qiskit_ibm_runtime import SamplerV2 as Sampler
 import mthree
 
 
 def test_athens_sim():
     """A check that list inputs work"""
     backend = FakeAthens()
+    sampler = Sampler(backend=backend)
 
     qc = QuantumCircuit(5)
     qc.h(2)
@@ -29,8 +31,8 @@ def test_athens_sim():
     qc.cx(3, 4)
     qc.measure_all()
 
-    raw_counts = backend.run(qc).result().get_counts()
-    mit = mthree.M3Mitigation(backend)
+    raw_counts = sampler.run([qc]).result()[0].data.meas.get_counts()
+    mit = mthree.M3Mitigation(sampler)
     mit.cals_from_system()
     mit_counts = mit.apply_correction([raw_counts]*10, qubits=range(5))
     assert isinstance(mit_counts, list)

@@ -17,6 +17,7 @@ from qiskit import QuantumCircuit, transpile
 from qiskit.transpiler import PassManager
 from qiskit.transpiler.passes.optimization import ResetAfterMeasureSimplification
 from qiskit_ibm_runtime.fake_provider import FakeKolkata
+from qiskit_ibm_runtime import SamplerV2 as Sampler
 
 import mthree
 
@@ -38,7 +39,8 @@ def test_dynamic_bv():
     qubit_list = list(set(mapping.values()))
     assert len(qubit_list) == 1
 
-    mit = mthree.M3Mitigation(backend)
+    sampler = Sampler(backend=backend)
+    mit = mthree.M3Mitigation(sampler)
     mit.cals_from_system(mapping, method='independent')
     # Check that only the 1 qubit is populated in the cals
     for idx, mat in enumerate(mit.single_qubit_cals):
@@ -47,7 +49,7 @@ def test_dynamic_bv():
         else:
             assert mat is None
 
-    counts = backend.run(trans_qc, shots=shots).result().get_counts()
+    counts = sampler.run([trans_qc], shots=shots).result()[0].data.c.get_counts()
     quasis = mit.apply_correction(counts, mapping)
 
     assert quasis['1'*N] > counts['1'*N]/shots

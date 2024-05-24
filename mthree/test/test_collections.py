@@ -15,6 +15,7 @@
 import numpy as np
 from qiskit import QuantumCircuit
 from qiskit_ibm_runtime.fake_provider import FakeAthens
+from qiskit_ibm_runtime import SamplerV2 as Sampler
 import mthree
 
 
@@ -30,8 +31,10 @@ def test_mit_overhead():
     qc.cx(3, 4)
     qc.measure_all()
 
-    raw_counts = backend.run([qc]*10).result().get_counts()
-    mit = mthree.M3Mitigation(backend)
+    sampler = Sampler(backend=backend)
+    primitive_results = sampler.run([qc]*10).result()
+    raw_counts = [pub_result.data.meas.get_counts() for pub_result in primitive_results]
+    mit = mthree.M3Mitigation(sampler)
     mit.cals_from_system()
     mit_counts = mit.apply_correction(raw_counts, qubits=range(5),
                                       return_mitigation_overhead=True)
@@ -52,8 +55,10 @@ def test_shots():
     qc.cx(3, 4)
     qc.measure_all()
 
-    raw_counts = backend.run([qc]*10, shots=4321).result().get_counts()
-    mit = mthree.M3Mitigation(backend)
+    sampler = Sampler(backend=backend)
+    primitive_results = sampler.run([qc]*10, shots=4321).result()
+    raw_counts = [pub_result.data.meas.get_counts() for pub_result in primitive_results]
+    mit = mthree.M3Mitigation(sampler)
     mit.cals_from_system()
     mit_counts = mit.apply_correction(raw_counts, qubits=range(5),
                                       return_mitigation_overhead=True)

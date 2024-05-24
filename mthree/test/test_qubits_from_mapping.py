@@ -13,6 +13,7 @@
 """Test QuantumCircuit final measurement mapping"""
 from qiskit import QuantumCircuit, transpile
 from qiskit_ibm_runtime.fake_provider import FakeCasablanca
+from qiskit_ibm_runtime import SamplerV2 as Sampler
 import mthree
 from mthree.utils import final_measurement_mapping
 
@@ -24,12 +25,12 @@ def test_cals_mappings():
     qc.x(4)
     qc.h(range(5))
     qc.cx(range(4), 4)
-    qc.draw()
     qc.h(range(4))
     qc.barrier()
     qc.measure(range(4), range(4))
 
     backend = FakeCasablanca()
+    sampler = Sampler(backend=backend)
     circs = transpile([qc]*5, backend, seed_transpiler=12345)
     maps = final_measurement_mapping(circs)
 
@@ -38,7 +39,7 @@ def test_cals_mappings():
         qubits.extend(list(item.values()))
     qubits = list(set(qubits))
 
-    mit = mthree.M3Mitigation(backend)
+    mit = mthree.M3Mitigation(sampler)
     mit.cals_from_system(maps)
     for qu in qubits:
         assert mit.single_qubit_cals[qu] is not None

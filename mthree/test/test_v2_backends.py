@@ -13,12 +13,14 @@
 
 """Test matrix elements"""
 from qiskit_ibm_runtime.fake_provider import FakeAthensV2
+from qiskit_ibm_runtime import SamplerV2 as Sampler
 import mthree
 
 
 def test_v2_fake_backend():
     """Test that fake v2 backends work"""
     backend = FakeAthensV2()
-    mit = mthree.M3Mitigation(backend)
+    sampler = Sampler(backend=backend)
+    mit = mthree.M3Mitigation(sampler)
     mit.cals_from_system()
     assert mit.cal_method == 'independent'

@@ -14,11 +14,13 @@
 """Test details handling"""
 from qiskit import QuantumCircuit, transpile
 from qiskit_ibm_runtime.fake_provider import FakeAthens
+from qiskit_ibm_runtime import SamplerV2 as Sampler
 
 import mthree
 
 
 BACKEND = FakeAthens()
+SAMPLER = Sampler(backend=BACKEND)
 
 
 def test_details_one_circuit():
@@ -39,9 +41,12 @@ def test_details_one_circuit():
     trans_qc = transpile(qc, BACKEND, optimization_level=3)
     mapping = mthree.utils.final_measurement_mapping(trans_qc)
 
-    raw_counts = BACKEND.run(trans_qc, shots=int(1e4)).result().get_counts()
+    raw_counts = SAMPLER.run(
+        [trans_qc],
+        shots=int(1e4)
+    ).result()[0].data.meas.get_counts()
 
-    mit = mthree.M3Mitigation(BACKEND)
+    mit = mthree.M3Mitigation(SAMPLER)
     mit.cals_from_system()
 
     quasi, details = mit.apply_correction(raw_counts, mapping, details=True)
@@ -68,9 +73,12 @@ def test_details_multi_circuit():
     trans_qc = transpile(qc, BACKEND, optimization_level=3)
     mapping = mthree.utils.final_measurement_mapping(trans_qc)
 
-    raw_counts = BACKEND.run(trans_qc, shots=int(1e4)).result().get_counts()
+    raw_counts = SAMPLER.run(
+        [trans_qc],
+        shots=int(1e4)
+    ).result()[0].data.meas.get_counts()
 
-    mit = mthree.M3Mitigation(BACKEND)
+    mit = mthree.M3Mitigation(SAMPLER)
     mit.cals_from_system()
 
     quasi, details = mit.apply_correction([raw_counts]*2, [mapping]*2, details=True)

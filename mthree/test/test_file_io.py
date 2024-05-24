@@ -16,12 +16,14 @@ import os
 import numpy as np
 from qiskit import QuantumCircuit
 from qiskit_ibm_runtime.fake_provider import FakeAthens
+from qiskit_ibm_runtime import SamplerV2 as Sampler
 import mthree
 
 
 def test_load_cals_from_file():
     """Check the cals can be loaded from a saved file"""
     backend = FakeAthens()
+    sampler = Sampler(backend=backend)
 
     qc = QuantumCircuit(5)
     qc.h(2)
@@ -31,8 +33,8 @@ def test_load_cals_from_file():
     qc.cx(3, 4)
     qc.measure_all()
 
-    raw_counts = backend.run(qc).result().get_counts()
-    mit = mthree.M3Mitigation(backend)
+    raw_counts = sampler.run([qc]).result()[0].data.meas.get_counts()
+    mit = mthree.M3Mitigation(sampler)
     mit.cals_from_system(cals_file='cals.json')
 
     mit2 = mthree.M3Mitigation()
@@ -56,6 +58,7 @@ def test_load_cals_from_file():
 def test_load_cals_from_file2():
     """Check the cals can be loaded from a saved file later"""
     backend = FakeAthens()
+    sampler = Sampler(backend=backend)
 
     qc = QuantumCircuit(5)
     qc.h(2)
@@ -65,8 +68,8 @@ def test_load_cals_from_file2():
     qc.cx(3, 4)
     qc.measure_all()
 
-    raw_counts = backend.run(qc).result().get_counts()
-    mit = mthree.M3Mitigation(backend)
+    raw_counts = sampler.run([qc]).result()[0].data.meas.get_counts()
+    mit = mthree.M3Mitigation(sampler)
     mit.cals_from_system(shots=12345)
     mit.cals_to_file('cals.json')
 

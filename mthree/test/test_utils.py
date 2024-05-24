@@ -16,12 +16,14 @@ import numpy as np
 from qiskit import QuantumCircuit
 from qiskit.quantum_info import Statevector
 from qiskit_ibm_runtime.fake_provider import FakeAthens
+from qiskit_ibm_runtime import SamplerV2 as Sampler
 import mthree
 
 
 def test_gen_dist0():
     """Verify that expval of 1 circuit raw counts gives same as dist=0 solution."""
     backend = FakeAthens()
+    sampler = Sampler(backend=backend)
     qc = QuantumCircuit(4)
     qc.h(2)
     qc.cx(2, 1)
@@ -29,8 +31,8 @@ def test_gen_dist0():
     qc.cx(1, 0)
     qc.measure_all()
 
-    raw_counts = backend.run(qc).result().get_counts()
-    mit = mthree.M3Mitigation(backend)
+    raw_counts = sampler.run([qc]).result()[0].data.meas.get_counts()
+    mit = mthree.M3Mitigation(sampler)
     mit.cals_from_system()
     mit_counts = mit.apply_correction(raw_counts, qubits=range(4),
                                       return_mitigation_overhead=True,
@@ -45,6 +47,7 @@ def test_gen_dist0():
 def test_gen_multi_dist0():
     """Verify that expval of multi circuit raw counts gives same as dist=0 solution."""
     backend = FakeAthens()
+    sampler = Sampler(backend=backend)
     qc = QuantumCircuit(4)
     qc.h(2)
     qc.cx(2, 1)
@@ -52,8 +55,11 @@ def test_gen_multi_dist0():
     qc.cx(1, 0)
     qc.measure_all()
 
-    raw_counts = backend.run([qc]*5).result().get_counts()
-    mit = mthree.M3Mitigation(backend)
+    raw_counts = [
+        pub_result.data.meas.get_counts()
+        for pub_result in sampler.run([qc]*5).result()
+    ]
+    mit = mthree.M3Mitigation(sampler)
     mit.cals_from_system()
     mit_counts = mit.apply_correction(raw_counts, qubits=range(4),
                                       return_mitigation_overhead=True,
@@ -70,6 +76,8 @@ def test_gen_multi_dist0():
 def test_gen_full_dist():
     """Verify that things work for non-trivial mitigation"""
     backend = FakeAthens()
+    sampler = Sampler(backend=backend)
+
     qc = QuantumCircuit(4)
     qc.h(2)
     qc.cx(2, 1)
@@ -77,8 +85,8 @@ def test_gen_full_dist():
     qc.cx(1, 0)
     qc.measure_all()
 
-    raw_counts = backend.run(qc).result().get_counts()
-    mit = mthree.M3Mitigation(backend)
+    raw_counts = sampler.run([qc]).result()[0].data.meas.get_counts()
+    mit = mthree.M3Mitigation(sampler)
     mit.cals_from_system()
     mit_counts = mit.apply_correction(raw_counts, qubits=range(4),
                                       return_mitigation_overhead=True)
@@ -94,6 +102,8 @@ def test_gen_full_dist():
 def test_gen_multi_full_dist():
     """Verify that things work for non-trivial mitigation of multi circuits"""
     backend = FakeAthens()
+    sampler = Sampler(backend=backend)
+
     qc = QuantumCircuit(4)
     qc.h(2)
     qc.cx(2, 1)
@@ -101,8 +111,11 @@ def test_gen_multi_full_dist():
     qc.cx(1, 0)
     qc.measure_all()
 
-    raw_counts = backend.run([qc]*5).result().get_counts()
-    mit = mthree.M3Mitigation(backend)
+    raw_counts = [
+        pub_result.data.meas.get_counts()
+        for pub_result in sampler.run([qc]*5).result()
+    ]
+    mit = mthree.M3Mitigation(sampler)
     mit.cals_from_system()
     mit_counts = mit.apply_correction(raw_counts, qubits=range(4),
                                       return_mitigation_overhead=True)

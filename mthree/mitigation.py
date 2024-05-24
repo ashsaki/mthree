@@ -24,7 +24,6 @@ import numpy as np
 import scipy.linalg as la
 import scipy.sparse.linalg as spla
 import orjson
-from qiskit.providers import BackendV2, BackendV1
 from qiskit_ibm_runtime import SamplerV2
 
 from mthree.circuits import (
@@ -51,7 +50,7 @@ class M3Mitigation:
         """Main M3 calibration class.
 
         Parameters:
-            system (SamplerV2): Target backend.
+            system (SamplerV2): Target SamplerV2.
             iter_threshold (int): Sets the bitstring count at which iterative mode
                                   is turned on (assuming reasonable error rates).
 
@@ -329,7 +328,7 @@ class M3Mitigation:
             async_cal (bool): Do calibration async in a separate thread, default is False.
 
         Raises:
-            M3Error: Backend not set.
+            M3Error: System not set.
             M3Error: Faulty qubits found.
         """
         if self.system is None:
@@ -404,8 +403,11 @@ class M3Mitigation:
         num_circs = len(trans_qcs)
         # check for max number of circuits per job
         if isinstance(self.system, SamplerV2):
-            max_circuits = self.system._backend.max_circuits
-            if max_circuits is None:
+            if hasattr(self.system._backend, "max_circuits"):
+                max_circuits = self.system._backend.max_circuits
+                if max_circuits is None:
+                    max_circuits = 300
+            else:
                 max_circuits = 300
         else:
             raise M3Error("Unknown backend type")
@@ -422,8 +424,7 @@ class M3Mitigation:
         # Do job submission here
         jobs = []
         for circs in circs_list:
-            self.system.options.default_shots = shots
-            _job = self.system.run(circs)
+            _job = self.system.run(circs, shots=shots)
             jobs.append(_job)
 
         # Execute job and cal building in new thread.
