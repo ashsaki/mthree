@@ -26,9 +26,7 @@ def test_groupings1():
     qc.cx(0, range(1, 4))
     qc.measure_all()
 
-    trans_circs = transpile(
-        [qc] * 2, backend, optimization_level=3
-    )
+    trans_circs = transpile([qc] * 2, backend, optimization_level=3)
     mappings = mthree.utils.final_measurement_mapping(trans_circs)
 
     job = backend.run(trans_circs, shots=10000)
