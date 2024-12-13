@@ -4,6 +4,12 @@
 Papers using M3
 ###############
 
+#. "Entanglement teleportation along a regenerating hamster-wheel graph state", Haiyue Kang, John F. Kam, Gary J. Mooney, Lloyd C. L. Hollenberg, `arXiv:2411.13060 <https://doi.org/10.48550/arXiv.2411.13060>`_.
+
+#. "Ptychographic estimation of pure multiqubit states in a quantum device", Warley M. S. Alves, Leonardo Neves, `APL Quantum 1, 046115 (2024) <https://doi.org/10.1063/5.0236968>`_.
+
+#. "Reducing PEC Overhead by Pauli Error Propagation", Timon Scheiber, Paul Haubenwallner, Matthias Heller, `arXiv:2412.01311 <https://doi.org/10.48550/arXiv.2412.01311>`_.
+
 #. "QSRA: A QPU Scheduling and Resource Allocation Approach for Cloud-Based Quantum Computing", Binhan Lu, Zhaoyun Chen, Yuchun Wu, `arXiv:2411.05283 <https://doi.org/10.48550/arXiv.2411.05283>`_.
 
 #. "Towards quantum computing Feynman diagrams in hybrid qubit-oscillator devices", S. Varona, S. Saner, O. Băzăvan, G. Araneda, G. Aarts, A. Bermudez, `arXiv:2411.05092 <https://doi.org/10.48550/arXiv.2411.05092>`_.
